@@ -1,122 +1,78 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useMemo, useState } from 'react'
 import './App.css'
+import { EibiMap } from './components/EibiMap'
+import { EIBI_SEASON } from './config'
+import { useEibiData } from './hooks/useEibiData'
+import { useNow } from './hooks/useNow'
+import { isOnAir } from './lib/onAir'
+import type { SiteGroup } from './types'
 
-function App() {
-  const [count, setCount] = useState(0)
+const NO_GROUPS: SiteGroup[] = []
+
+export default function App() {
+  const state = useEibiData()
+  const now = useNow()
+  const [showApprox, setShowApprox] = useState(false)
+
+  const allGroups = state.status === 'ready' ? state.data.groups : NO_GROUPS
+
+  const groups = useMemo(
+    () => (showApprox ? allGroups : allGroups.filter((g) => !g.approximate)),
+    [allGroups, showApprox],
+  )
+  const approxCount = useMemo(() => allGroups.filter((g) => g.approximate).length, [allGroups])
+
+  const onAir = useMemo(
+    () => groups.map((g) => g.broadcasts.some((b) => isOnAir(b, now))),
+    [groups, now],
+  )
+  const greenCount = onAir.reduce((n, v) => n + (v ? 1 : 0), 0)
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <EibiMap groups={groups} onAir={onAir} now={now} />
 
-      <div className="ticks"></div>
+      <aside className="hud">
+        <h1 className="hud-title">Передатчики EiBi {EIBI_SEASON.toUpperCase()}</h1>
+        <p className="hud-time">Сейчас {now.toISOString().slice(11, 16)} UTC</p>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {state.status === 'loading' && <p className="hud-text">Загружаю расписание…</p>}
+        {state.status === 'error' && <p className="hud-error">{state.message}</p>}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        {state.status === 'ready' && (
+          <>
+            <ul className="legend">
+              <li>
+                <span className="swatch on" />
+                В эфире сейчас: {greenCount}
+              </li>
+              <li>
+                <span className="swatch idle" />
+                Сейчас молчат: {groups.length - greenCount}
+              </li>
+            </ul>
+
+            <p className="hud-text">
+              Передач в файле: {state.data.total}. Не удалось определить передатчик у{' '}
+              {state.data.unresolved}.
+            </p>
+
+            {approxCount > 0 && (
+              <label className="hud-check">
+                <input
+                  type="checkbox"
+                  checked={showApprox}
+                  onChange={(e) => setShowApprox(e.target.checked)}
+                />
+                <span>
+                  Показать точки с приблизительным положением ({approxCount}). У них в списке не указана
+                  площадка, пунктирный контур.
+                </span>
+              </label>
+            )}
+          </>
+        )}
+      </aside>
+    </div>
   )
 }
-
-export default App
