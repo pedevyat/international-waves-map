@@ -8,15 +8,11 @@
   width: 100%;
 }
 
-/* ---------- панель сверху справа ---------- */
+/* ---------- общий вид плавающих панелей ---------- */
 
-.hud {
+.panel {
   position: absolute;
   z-index: 1000;
-  top: 12px;
-  right: 12px;
-  width: 290px;
-  max-width: calc(100vw - 24px);
   padding: 12px 14px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.95);
@@ -24,8 +20,111 @@
   font-size: 13px;
 }
 
+.icon-btn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #51615a;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: #e8edea;
+}
+
+.link-btn {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1b6e43;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- фильтр по частоте, слева сверху ---------- */
+
+.freq {
+  top: 12px;
+  left: 12px;
+  width: 236px;
+}
+
+.freq-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.freq-row {
+  display: flex;
+  gap: 8px;
+}
+
+.freq-field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.freq-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #c3cdc8;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.freq-field input:focus {
+  outline: 2px solid #2ee077;
+  outline-offset: 0;
+  border-color: #0a7a38;
+}
+
+.freq-field input[aria-invalid='true'] {
+  border-color: #a4261d;
+  background: #fff4f3;
+}
+
+.freq-hint {
+  margin: 8px 0 0;
+  color: #51615a;
+}
+
+.freq-hint.error {
+  color: #a4261d;
+}
+
+/* ---------- информационная панель, справа сверху ---------- */
+
+.hud {
+  top: 12px;
+  right: 12px;
+  width: 290px;
+}
+
+.hud-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -4px -6px 0 0;
+}
+
 .hud-title {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 15px;
   font-weight: 650;
 }
@@ -43,6 +142,17 @@
 .hud-error {
   margin: 8px 0 0;
   color: #a4261d;
+}
+
+.hud-reopen {
+  top: 12px;
+  right: 12px;
+  padding: 7px 12px;
+  border: 0;
+  color: #1b2620;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .legend {
@@ -169,4 +279,26 @@
 .sp-dot.on {
   background: #2ee077;
   box-shadow: 0 0 0 3px rgba(46, 224, 119, 0.35);
+}
+
+/* ---------- узкие экраны ---------- */
+
+@media (max-width: 640px) {
+  .freq {
+    width: calc(100vw - 24px);
+  }
+
+  /* панель сдвигается под фильтр, чтобы они не перекрывались */
+  .hud,
+  .hud-reopen {
+    top: auto;
+    bottom: 36px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
+  }
+
+  /* 16px, чтобы iOS не увеличивал страницу при фокусе */
+  .freq-field input {
+    font-size: 16px;
+  }
 }

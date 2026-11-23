@@ -1,56 +1,46 @@
-import type { SiteGroup } from '../types'
-
-/** Верхняя граница КВ-диапазона в списке EiBi, кГц. */
+/** Верхняя граница коротких волн, кГц. */
 export const MAX_KHZ = 30000
 
 export interface FreqRange {
+  /** Границы в кГц, включительно. */
   min: number
   max: number
+  /** true, если заполнено хотя бы одно поле. */
+  active: boolean
+  fromInvalid: boolean
+  toInvalid: boolean
 }
 
-function toNumber(s: string): number | null {
-  const t = s.trim().replace(',', '.')
-  if (t === '') return null
-  const n = Number(t)
-  return Number.isFinite(n) && n >= 0 ? n : null
-}
-
-/**
- * Поля «от» и «до» в кГц.
- *   пусто «от» — от 0 до N;  пусто «до» — от N до 30000;
- *   заполнены оба — от меньшего к большему (если перепутаны, меняем местами);
- *   пусты оба — фильтра нет (null).
- */
-export function parseRange(from: string, to: string): FreqRange | null {
-  const a = toNumber(from)
-  const b = toNumber(to)
-  if (a === null && b === null) return null
-
-  let min = a ?? 0
-  let max = b ?? Math.max(MAX_KHZ, min)
-  if (a !== null && b !== null && a > b) [min, max] = [b, a]
-  return { min, max }
+function parseKhz(text: string): { value: number | null; invalid: boolean } {
+  const s = text.trim().replace(',', '.')
+  if (s === '') return { value: null, invalid: false }
+  const value = Number(s)
+  if (!Number.isFinite(value) || value < 0) return { value: null, invalid: true }
+  return { value, invalid: false }
 }
 
 /**
- * Оставляет у каждой точки только передачи из диапазона; точки без таких передач убираются.
- * Без диапазона возвращает исходный массив.
+ * Пустое «от» — от 0, пустое «до» — до 30000 кГц, оба пустых — без ограничения.
+ * Нечисловой ввод считается пустым полем (и подсвечивается как ошибка).
+ * Если «от» больше «до», границы меняются местами.
  */
-export function filterByRange(
-  groups: SiteGroup[],
-  range: FreqRange | null,
-): { groups: SiteGroup[]; broadcastCount: number } {
-  if (!range) {
-    return { groups, broadcastCount: groups.reduce((n, g) => n + g.broadcasts.length, 0) }
-  }
+export function parseFreqRange(fromText: string, toText: string): FreqRange {
+  const from = parseKhz(fromText)
+  const to = parseKhz(toText)
 
-  const result: SiteGroup[] = []
-  let broadcastCount = 0
-  for (const g of groups) {
-    const broadcasts = g.broadcasts.filter((b) => b.freqKhz >= range.min && b.freqKhz <= range.max)
-    if (broadcasts.length === 0) continue
-    broadcastCount += broadcasts.length
-    result.push({ ...g, broadcasts })
+  let min = from.value ?? 0
+  let max = to.value ?? MAX_KHZ
+  if (from.value !== null && to.value !== null && min > max) [min, max] = [max, min]
+
+  return {
+    min,
+    max,
+    active: from.value !== null || to.value !== null,
+    fromInvalid: from.invalid,
+    toInvalid: to.invalid,
   }
-  return { groups: result, broadcastCount }
+}
+
+export function inFreqRange(freqKhz: number, range: FreqRange): boolean {
+  return freqKhz >= range.min && freqKhz <= range.max
 }
