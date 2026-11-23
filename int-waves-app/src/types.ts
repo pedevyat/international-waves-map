@@ -53,6 +53,6 @@ export interface SiteGroup {
 export interface BuildResult {
   groups: SiteGroup[]
   total: number
-  /** Сколько передач не удалось привязать к координатам. */
-  unresolved: number
+  /** Передачи, которые не удалось привязать к координатам. */
+  unresolvedList: Broadcast[]
 }

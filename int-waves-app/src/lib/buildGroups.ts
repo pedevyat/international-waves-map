@@ -5,12 +5,12 @@ import { createSiteResolver } from './resolveSite'
 export function buildGroups(broadcasts: Broadcast[], db: SiteDb): BuildResult {
   const resolve = createSiteResolver(db)
   const groups = new Map<string, SiteGroup>()
-  let unresolved = 0
+  const unresolvedList: Broadcast[] = []
 
   for (const b of broadcasts) {
     const site = resolve(b.itu, b.remarks)
     if (!site) {
-      unresolved++
+      unresolvedList.push(b)
       continue
     }
 
@@ -35,5 +35,5 @@ export function buildGroups(broadcasts: Broadcast[], db: SiteDb): BuildResult {
     group.broadcasts.push(b)
   }
 
-  return { groups: [...groups.values()], total: broadcasts.length, unresolved }
+  return { groups: [...groups.values()], total: broadcasts.length, unresolvedList }
 }

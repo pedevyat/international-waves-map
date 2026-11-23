@@ -2,22 +2,24 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import './App.css'
 import { EibiMap } from './components/EibiMap'
 import { FrequencyFilter } from './components/FrequencyFilter'
+import { UnlocatedPanel } from './components/UnlocatedPanel'
 import { EIBI_SEASON } from './config'
 import { useEibiData } from './hooks/useEibiData'
 import { useNow } from './hooks/useNow'
 import { inFreqRange, parseFreqRange } from './lib/freqRange'
 import { isOnAir } from './lib/onAir'
-import type { SiteGroup } from './types'
+import type { Broadcast, SiteGroup } from './types'
 
 const NO_GROUPS: SiteGroup[] = []
+const NO_BROADCASTS: Broadcast[] = []
 
 export default function App() {
   const state = useEibiData()
   const now = useNow()
 
-  const [showApprox, setShowApprox] = useState(true)
   // на узких экранах панель по умолчанию свёрнута, чтобы не закрывать карту
   const [hudOpen, setHudOpen] = useState(() => !window.matchMedia('(max-width: 640px)').matches)
+  const [unlocatedOpen, setUnlocatedOpen] = useState(false)
   const [fromText, setFromText] = useState('')
   const [toText, setToText] = useState('')
 
@@ -38,12 +40,16 @@ export default function App() {
     return result
   }, [allGroups, appliedRange])
 
+  // передачи без координат тоже подчиняются фильтру по частоте
+  const unlocated = useMemo(() => {
+    if (state.status !== 'ready') return NO_BROADCASTS
+    const list = state.data.unresolvedList
+    return appliedRange.active ? list.filter((b) => inFreqRange(b.freqKhz, appliedRange)) : list
+  }, [state, appliedRange])
+
   const approxCount = useMemo(() => rangeGroups.filter((g) => g.approximate).length, [rangeGroups])
 
-  const groups = useMemo(
-    () => (showApprox ? rangeGroups : rangeGroups.filter((g) => !g.approximate)),
-    [rangeGroups, showApprox],
-  )
+  const groups = rangeGroups
 
   const onAir = useMemo(
     () => groups.map((g) => g.broadcasts.some((b) => isOnAir(b, now))),
@@ -70,6 +76,10 @@ export default function App() {
           setToText('')
         }}
       />
+
+      {unlocatedOpen && (
+        <UnlocatedPanel broadcasts={unlocated} now={now} onClose={() => setUnlocatedOpen(false)} />
+      )}
 
       {hudOpen ? (
         <aside className="panel hud">
@@ -104,22 +114,22 @@ export default function App() {
               </ul>
 
               <p className="hud-text">
-                Передач на карте: {visibleBroadcasts}. Всего в файле: {state.data.total}, передатчик
-                не определён у {state.data.unresolved}.
+                Передач на карте: {visibleBroadcasts}/{state.data.total}.
               </p>
 
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setUnlocatedOpen(true)}
+                disabled={unlocated.length === 0}
+              >
+                Передачи без координат ({unlocated.length})
+              </button>
+
               {approxCount > 0 && (
-                <label className="hud-check">
-                  <input
-                    type="checkbox"
-                    checked={showApprox}
-                    onChange={(e) => setShowApprox(e.target.checked)}
-                  />
-                  <span>
-                    Точки с приблизительным положением ({approxCount}): в списке не указана площадка,
-                    точка стоит в центре передатчиков страны. Пунктирный контур, свечение всегда.
-                  </span>
-                </label>
+                <p className="hud-text">
+                  Точек с приблизительным положением: {approxCount}.
+                </p>
               )}
             </>
           )}
