@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { languageLabel } from '../lib/languages'
 import { isOnAir } from '../lib/onAir'
 import type { Broadcast } from '../types'
 
@@ -103,7 +104,7 @@ export function UnlocatedPanel({ broadcasts, now, onClose }: Props) {
                       <td>{b.daysLabel}</td>
                       <td>{b.station}</td>
                       <td>{b.itu}</td>
-                      <td>{b.lang}</td>
+                      <td title={b.lang || undefined}>{languageLabel(b.lang)}</td>
                       <td>{b.target}</td>
                       <td>{b.remarks || '—'}</td>
                     </tr>

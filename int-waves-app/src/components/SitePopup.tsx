@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { languageLabel } from '../lib/languages'
 import { isOnAir } from '../lib/onAir'
 import type { SiteGroup } from '../types'
 
@@ -70,7 +71,7 @@ export function SitePopup({ group, now }: Props) {
                   <td className="num">{b.timeLabel}</td>
                   <td>{b.daysLabel}</td>
                   <td>{b.station}</td>
-                  <td>{b.lang}</td>
+                  <td title={b.lang || undefined}>{languageLabel(b.lang)}</td>
                   <td>{b.target}</td>
                 </tr>
               ))}
