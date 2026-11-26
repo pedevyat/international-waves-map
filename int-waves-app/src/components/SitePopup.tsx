@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { languageLabel } from '../lib/languages'
+import { targetLabel } from '../lib/targets'
+import { countryLabel } from '../lib/countries'
 import { isOnAir } from '../lib/onAir'
 import type { SiteGroup } from '../types'
 
@@ -27,7 +29,7 @@ export function SitePopup({ group, now }: Props) {
     <div className="sp">
       <h2 className="sp-title">{group.names.join(' / ')}</h2>
       <p className="sp-sub">
-        {group.country}. Сейчас в эфире: {onAirCount} из {rows.length}
+        {countryLabel(group.country)}. Сейчас в эфире: {onAirCount} из {rows.length}
       </p>
       {group.approximate && (
         <p className="sp-note">
@@ -72,7 +74,7 @@ export function SitePopup({ group, now }: Props) {
                   <td>{b.daysLabel}</td>
                   <td>{b.station}</td>
                   <td title={b.lang || undefined}>{languageLabel(b.lang)}</td>
-                  <td>{b.target}</td>
+                  <td title={b.target || undefined}>{targetLabel(b.target)}</td>
                 </tr>
               ))}
             </tbody>
